@@ -64,7 +64,6 @@ def train():
     '''get datasets'''
     train_gen = Denoise_Generator("./datasets/", input_shape, batch_size, augs=[], is_train=True)
     # valid_gen = Class_Generator("./datasets/val/", input_shape, class_num, batch_size, augs= [], is_train=False)
-
     step_size  = train_gen.__len__()
     step_size = step_size * 8
     if step_size < 622:

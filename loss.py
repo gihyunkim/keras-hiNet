@@ -9,11 +9,11 @@ def log10(x):
 def psnr_loss(y_true, y_pred):
     loss = 0
     for idx in range(2):
-        loss += -10 * log10(K.mean(K.square(y_pred - y_true)))
+        loss += -10 * log10(K.mean(K.square(y_pred - y_true), axis=-1))
     return loss
 
 def mean_squared_error(y_true, y_pred):
     loss = 0
     for idx in range(2):
-        loss += K.mean(K.square(y_pred - y_true))
+        loss += K.mean(K.square(y_pred - y_true), axis=-1)
     return loss
