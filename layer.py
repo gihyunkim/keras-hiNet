@@ -6,7 +6,7 @@ import keras.backend as K
 def hinBlock(inputs, filters, kernel_size):
     residual = inputs
 
-    layer1 = keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, padding="same")(inputs)
+    layer1 = keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, padding="same", use_bias=False)(inputs)
 
     '''half instance'''
     layer_mid = list(keras.layers.Lambda(lambda x : tf.split(x, 2, axis=-1))(layer1))
@@ -31,8 +31,8 @@ def hinUpSample(inputs, filters, kernel_size):
     block_up = keras.layers.LeakyReLU(alpha=0.2)(block_up)
     return block_up
 
-def leakyBlock(inputs, filters, kernel_size, strides=1):
-    layer = keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding="same")(inputs)
+def leakyBlock(inputs, filters, kernel_size, strides=1, use_bias=True):
+    layer = keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding="same", use_bias=use_bias)(inputs)
     out = keras.layers.LeakyReLU(alpha=0.2)(layer)
     return out
 
@@ -53,7 +53,7 @@ def samBlock(inputs, degraded_inputs, block_name):
     pred_restored_img = keras.layers.Add(name=block_name)([degraded_inputs, residual_img])
 
     attention_mask = keras.layers.Conv2D(filters=input_channels, kernel_size=(3, 3), strides=1,
-                                         padding="same", activation="sigmoid")(pred_restored_img)
+                                         padding="same", activation="sigmoid", use_bias=True)(pred_restored_img)
 
     '''re-calibrate'''
     recal_layer = keras.layers.Conv2D(filters=input_channels, kernel_size=(3, 3), strides=1, padding="same")(inputs)

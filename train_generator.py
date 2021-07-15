@@ -14,9 +14,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def train():
     '''model configuration'''
-    input_shape = (256, 256, 3)
+    input_shape = (192, 192, 3)
     epochs = 1000
-    batch_size = 8
+    batch_size = 16
     weight_decay = 1e-4
     lr = 1e-4
     optimizer = RAdam(learning_rate=lr)
@@ -64,6 +64,7 @@ def train():
     '''get datasets'''
     train_gen = Denoise_Generator("./datasets/", input_shape, batch_size, augs=[], is_train=True)
     # valid_gen = Class_Generator("./datasets/val/", input_shape, class_num, batch_size, augs= [], is_train=False)
+
     step_size  = train_gen.__len__()
     step_size = step_size * 8
     if step_size < 622:
@@ -76,12 +77,12 @@ def train():
     model.summary()
     # model.load_weights("./save_weights/densenet_00039.h5")
     # model.save("./test.h5")
-    model.compile(optimizer=optimizer, loss={"pred1":mean_squared_error, "pred2":mean_squared_error})
+    model.compile(optimizer=optimizer, loss={"two_pred_and_input":psnr_loss})
     model.fit_generator(train_gen, epochs=epochs,
                         max_queue_size=20, workers=4, initial_epoch=0,
                         callbacks=[TensorBoard(log_dir),
                                    # ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=10),
-                                   CyclicLR(base_lr=1e-5, max_lr=1e-3, step_size=step_size, mode="triangular2"),
+                                   CyclicLR(base_lr=1e-5, max_lr=1e-3, step_size=step_size*8, mode="triangular2"),
                                    ModelCheckpoint(weight_save_file, monitor="loss", save_best_only=True)])
 
 if __name__ == "__main__":

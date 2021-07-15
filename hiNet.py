@@ -18,12 +18,12 @@ class HiNet:
         block1 = hinBlock(inputs, filters=64, kernel_size=(3, 3))
         if csff_list:
             block1 = keras.layers.Add()([block1, csff_list[0]])
-        block_down1 = hinDownSample(block1, filters=64, kernel_size=(4, 4))
+        block_down1 = hinDownSample(block1, filters=128, kernel_size=(4, 4))
 
         block2 = hinBlock(block_down1, filters=128, kernel_size=(3, 3))
         if csff_list:
             block2 = keras.layers.Add()([block2, csff_list[1]])
-        block_down2 = hinDownSample(block2, filters=128, kernel_size=(4, 4))
+        block_down2 = hinDownSample(block2, filters=256, kernel_size=(4, 4))
 
         '''decoder'''
         block3 = hinBlock(block_down2, filters=256, kernel_size=(3, 3))
@@ -62,4 +62,5 @@ class HiNet:
         '''body'''
         _, _, _, out = self.hinet_body(stem2, csff_list=csff_list)
         pred_img2 = keras.layers.Conv2D(filters=3, kernel_size=(3, 3), padding="same", name="pred2")(out)
-        return keras.models.Model(inputs, [pred_img, pred_img2])
+        two_pred_and_input = keras.layers.Concatenate(name="two_pred_and_input")([inputs, pred_img, pred_img2])
+        return keras.models.Model(inputs, two_pred_and_input)

@@ -57,7 +57,7 @@ class Denoise_Generator(keras.utils.Sequence):
             input_x[idx] = x_imgs[idx] / 255.0
             input_y[idx] = y_imgs[idx] / 255.0
         # input_y = to_categorical(y, num_classes=self.class_num)
-        return input_x, [input_y, input_y]
+        return input_x, input_y
 
 if __name__ == "__main__":
     src_path = "./datasets/train/"
