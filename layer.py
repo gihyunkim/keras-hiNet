@@ -3,6 +3,15 @@ import keras
 import tensorflow as tf
 import keras.backend as K
 
+def conv_bn(inputs, filters, kernel_size, activation="relu"):
+    layer = keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=1, padding="same", use_bias=False)(inputs)
+    layer = keras.layers.BatchNormalization()(layer)
+    if activation == "leaky":
+        layer = keras.layers.LeakyReLU()(layer)
+    else:
+        layer = keras.layers.Activation(activation)(layer)
+    return layer
+
 def hinBlock(inputs, filters, kernel_size):
     residual = inputs
 
@@ -18,7 +27,6 @@ def hinBlock(inputs, filters, kernel_size):
     layer2 = leakyBlock(layer1, filters=filters, kernel_size=kernel_size, strides=1)
 
     residual = keras.layers.Conv2D(filters=filters, kernel_size=(1, 1), strides=1, padding="same")(residual)
-
     out = keras.layers.Add()([residual, layer2])
     return out
 
@@ -43,7 +51,6 @@ def resBlock(inputs, filters, kernel_size):
     layer2 = leakyBlock(layer1, filters=filters, kernel_size=kernel_size)
 
     residual = keras.layers.Conv2D(filters=filters, kernel_size=(1, 1), strides=1, padding="same")(residual)
-
     out = keras.layers.Add()([residual, layer2])
     return out
 

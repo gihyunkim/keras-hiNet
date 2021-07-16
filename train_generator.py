@@ -14,9 +14,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def train():
     '''model configuration'''
-    input_shape = (192, 192, 3)
-    epochs = 1000
-    batch_size = 16
+    input_shape = (256, 256, 3)
+    epochs = 10000
+    batch_size = 8
     weight_decay = 1e-4
     lr = 1e-4
     optimizer = RAdam(learning_rate=lr)
@@ -75,14 +75,14 @@ def train():
     hi = HiNet(input_shape=input_shape, weight_decay=weight_decay)
     model = hi.hinet()
     model.summary()
-    # model.load_weights("./save_weights/densenet_00039.h5")
+    model.load_weights("./save_weights/hinet_00730.h5")
     # model.save("./test.h5")
     model.compile(optimizer=optimizer, loss={"two_pred_and_input":psnr_loss})
     model.fit_generator(train_gen, epochs=epochs,
                         max_queue_size=20, workers=4, initial_epoch=0,
                         callbacks=[TensorBoard(log_dir),
                                    # ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=10),
-                                   CyclicLR(base_lr=1e-5, max_lr=1e-3, step_size=step_size*8, mode="triangular2"),
+                                   CyclicLR(base_lr=1e-7, max_lr=1e-5, step_size=step_size*8, mode="triangular2"),
                                    ModelCheckpoint(weight_save_file, monitor="loss", save_best_only=True)])
 
 if __name__ == "__main__":

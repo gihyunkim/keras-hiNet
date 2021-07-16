@@ -13,11 +13,9 @@ class Denoise_Generator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.input_shape = input_shape
         self.augs = iaa.Sequential(augs)
-        self.x, self.y = [], []
+        self.x = []
 
         self.x = glob.glob(src_path+"train_input_img/*.png")
-        self.y = glob.glob(src_path+"train_label_img/*.png")
-
         self.on_epoch_end()
 
     def __getitem__(self, idx):
@@ -25,8 +23,7 @@ class Denoise_Generator(keras.utils.Sequence):
         batch_index = self.index[idx*self.batch_size:(idx+1)*self.batch_size]
         for i in batch_index:
             batch_x.append(self.x[i])
-            batch_y.append(self.y[i])
-        out_x, out_y = self.data_gen(batch_x, batch_y)
+        out_x, out_y = self.data_gen(batch_x)
         return out_x, out_y
 
     def __len__(self):
@@ -37,7 +34,7 @@ class Denoise_Generator(keras.utils.Sequence):
         if self.is_train:
             np.random.shuffle(self.index)
 
-    def data_gen(self, x, y):
+    def data_gen(self, x):
         input_x = np.zeros((self.batch_size, self.input_shape[0], self.input_shape[1], self.input_shape[2]), dtype=np.float32)
         input_y = np.zeros((self.batch_size, self.input_shape[0], self.input_shape[1], self.input_shape[2]), dtype=np.float32)
         x_imgs = []
@@ -45,9 +42,8 @@ class Denoise_Generator(keras.utils.Sequence):
         for idx in range(len(x)):
             x_img = cv2.imread(x[idx])
             x_imgs.append(cv2.resize(x_img, (self.input_shape[0], self.input_shape[1])))
-            y_img = cv2.imread(y[idx])
+            y_img = cv2.imread(x[idx].replace("input", "label"))
             y_imgs.append(cv2.resize(y_img, (self.input_shape[0], self.input_shape[1])))
-
         # batch_imgs = UnnormalizedBatch(images=x_imgs, data=y)
         # batch_aug_imgs = list(self.augs.augment_batches(batches=batch_imgs))
 
@@ -60,8 +56,8 @@ class Denoise_Generator(keras.utils.Sequence):
         return input_x, input_y
 
 if __name__ == "__main__":
-    src_path = "./datasets/train/"
-    input_shape = (64, 64, 3)
+    src_path = "./datasets/"
+    input_shape = (256, 256, 3)
     class_num = 200
     epochs = 1000
     batch_size = 16
@@ -101,7 +97,7 @@ if __name__ == "__main__":
 
     ]
 
-    cg = Class_Generator(src_path, input_shape=input_shape, class_num=class_num, augs= augs, batch_size=1)
+    cg = Denoise_Generator(src_path, input_shape=input_shape, augs= [], batch_size=1)
     step_size = cg.__len__()
     for i in range(step_size):
         cg.__getitem__(i)
