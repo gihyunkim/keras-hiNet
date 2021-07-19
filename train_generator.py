@@ -12,7 +12,7 @@ from keras.utils.multi_gpu_utils import multi_gpu_model
 import albumentations as alb
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 def train():
     '''model configuration'''
@@ -22,13 +22,13 @@ def train():
     weight_decay = 1e-4
     lr = 1e-4
     optimizer = RAdam(learning_rate=lr)
-    multi_gpu = True
+    multi_gpu = False
     model_name = "hinet"
 
     '''Augmentation'''
     augs = alb.Compose([
         alb.HorizontalFlip(p=0.5),
-        # alb.Rotate(limit=30, p=0.5),
+        alb.Rotate(limit=30, p=0.5),
     ], additional_targets={'gt_image':'image'})
 
     '''call back'''
@@ -49,7 +49,7 @@ def train():
     print("Step size: ", step_size)
 
     '''train'''
-    hi = HiNet(input_shape=input_shape, weight_decay=weight_decay)
+    hi = HiNet(input_shape=input_shape, filters=96, weight_decay=weight_decay)
     model = hi.hinet()
     model.summary()
     if multi_gpu:

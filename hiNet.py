@@ -2,10 +2,10 @@ from layer import *
 import keras
 
 class HiNet:
-    def __init__(self,input_shape, weight_decay=0.0001):
+    def __init__(self,input_shape, filters=64, weight_decay=0.0001):
         self.input_shape = input_shape
         self.l2_reg = keras.regularizers.l2(weight_decay)
-        self.filters=96
+        self.filters=filters
 
     def hinet_stem(self, inputs):
         '''32 x 32'''

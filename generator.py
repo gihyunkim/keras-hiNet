@@ -12,7 +12,7 @@ class Denoise_Generator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.input_shape = input_shape
         self.augs = augs
-        self.x = glob.glob(src_path+"train_input_img/*.png")
+        self.x = list(set(glob.glob(src_path+"train_input_img_crop/*/*.png")))
         self.on_epoch_end()
 
     def __getitem__(self, idx):
