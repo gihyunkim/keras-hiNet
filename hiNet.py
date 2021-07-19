@@ -5,6 +5,7 @@ class HiNet:
     def __init__(self,input_shape, weight_decay=0.0001):
         self.input_shape = input_shape
         self.l2_reg = keras.regularizers.l2(weight_decay)
+        self.filters=96
 
     def hinet_stem(self, inputs):
         '''32 x 32'''
@@ -15,26 +16,26 @@ class HiNet:
 
     def hinet_body(self, inputs, csff_list=None):
         '''encoder'''
-        block1 = hinBlock(inputs, filters=64, kernel_size=(3, 3))
+        block1 = hinBlock(inputs, filters=self.filters, kernel_size=(3, 3))
         if csff_list:
             block1 = keras.layers.Add()([block1, csff_list[0]])
-        block_down1 = hinDownSample(block1, filters=128, kernel_size=(4, 4))
+        block_down1 = hinDownSample(block1, filters=self.filters*2, kernel_size=(4, 4))
 
-        block2 = hinBlock(block_down1, filters=128, kernel_size=(3, 3))
+        block2 = hinBlock(block_down1, filters=self.filters*2, kernel_size=(3, 3))
         if csff_list:
             block2 = keras.layers.Add()([block2, csff_list[1]])
-        block_down2 = hinDownSample(block2, filters=256, kernel_size=(4, 4))
+        block_down2 = hinDownSample(block2, filters=self.filters*4, kernel_size=(4, 4))
 
         '''decoder'''
-        block3 = hinBlock(block_down2, filters=256, kernel_size=(3, 3))
-        block_up1 = hinUpSample(block3, filters=128, kernel_size=(2, 2))
+        block3 = hinBlock(block_down2, filters=self.filters*4, kernel_size=(3, 3))
+        block_up1 = hinUpSample(block3, filters=self.filters*2, kernel_size=(2, 2))
         block_up1 = keras.layers.Add()([block2, block_up1])
 
-        block4 = resBlock(block_up1, filters=128, kernel_size=(3, 3))
-        block_up2 = hinUpSample(block4, filters=64, kernel_size=(2, 2))
+        block4 = resBlock(block_up1, filters=self.filters*2, kernel_size=(3, 3))
+        block_up2 = hinUpSample(block4, filters=self.filters, kernel_size=(2, 2))
         block_up2 = keras.layers.Add()([block1, block_up2])
 
-        block5 = resBlock(block_up2, filters=64, kernel_size=(3, 3))
+        block5 = resBlock(block_up2, filters=self.filters, kernel_size=(3, 3))
         return block1, block2, block4, block5
 
     def hinet(self):
@@ -42,7 +43,7 @@ class HiNet:
 
         # ==================================stage 1=====================================
         '''stem'''
-        stem1 = keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same")(inputs)
+        stem1 = keras.layers.Conv2D(filters=self.filters, kernel_size=(3, 3), padding="same")(inputs)
 
         '''body'''
         csff_1, csff_2, csff_3, csff_4 = self.hinet_body(stem1)
@@ -55,9 +56,9 @@ class HiNet:
         csff_list.append(csffBlock(csff_2, csff_3))
 
         '''stem'''
-        stem2 = keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same")(inputs)
+        stem2 = keras.layers.Conv2D(filters=self.filters, kernel_size=(3, 3), padding="same")(inputs)
         stem2 = keras.layers.Multiply()([sam_out, stem2])
-        stem2 = keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same")(stem2)
+        stem2 = keras.layers.Conv2D(filters=self.filters, kernel_size=(3, 3), padding="same")(stem2)
 
         '''body'''
         _, _, _, out = self.hinet_body(stem2, csff_list=csff_list)

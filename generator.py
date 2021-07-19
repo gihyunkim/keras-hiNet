@@ -4,17 +4,14 @@ import os
 import numpy as np
 from keras.utils import to_categorical
 import cv2
-from imgaug import augmenters as iaa
-from imgaug.augmentables.batches import UnnormalizedBatch
+import albumentations as alb
 
 class Denoise_Generator(keras.utils.Sequence):
     def __init__(self, src_path, input_shape, batch_size, augs=None, is_train=False):
         self.is_train = is_train
         self.batch_size = batch_size
         self.input_shape = input_shape
-        self.augs = iaa.Sequential(augs)
-        self.x = []
-
+        self.augs = augs
         self.x = glob.glob(src_path+"train_input_img/*.png")
         self.on_epoch_end()
 
@@ -44,15 +41,12 @@ class Denoise_Generator(keras.utils.Sequence):
             x_imgs.append(cv2.resize(x_img, (self.input_shape[0], self.input_shape[1])))
             y_img = cv2.imread(x[idx].replace("input", "label"))
             y_imgs.append(cv2.resize(y_img, (self.input_shape[0], self.input_shape[1])))
-        # batch_imgs = UnnormalizedBatch(images=x_imgs, data=y)
-        # batch_aug_imgs = list(self.augs.augment_batches(batches=batch_imgs))
-
         for idx in range(len(x)):
-            # aug_img = batch_aug_imgs[0].images_aug[idx]
-            # input_x[idx] = aug_img.astype(np.float) / 255.0
-            input_x[idx] = x_imgs[idx] / 255.0
-            input_y[idx] = y_imgs[idx] / 255.0
-        # input_y = to_categorical(y, num_classes=self.class_num)
+            aug_imgs = self.augs(image=x_imgs[idx], image0=y_imgs[idx])
+            aug_x = aug_imgs['image']
+            aug_y = aug_imgs['image0']
+            input_x[idx] = aug_x / 255.0
+            input_y[idx] = aug_y / 255.0
         return input_x, input_y
 
 if __name__ == "__main__":
@@ -64,40 +58,14 @@ if __name__ == "__main__":
     weight_decay = 1e-4
     lr = 1e-4
 
-    augs = [
-        iaa.Fliplr(0.5),
-
-        iaa.SomeOf((1,2),[
-            iaa.MultiplyAndAddToBrightness(),
-            iaa.GammaContrast()
-        ]),
-
-        iaa.SomeOf((0,2), [
-            iaa.Sometimes(0.7, iaa.AdditiveGaussianNoise()),
-            iaa.Sometimes(0.7, iaa.GaussianBlur())
-        ]),
+    '''Augmentation'''
+    augs = alb.Compose([
+        alb.HorizontalFlip(p=0.5),
+        alb.Rotate(limit=35, p=0.5),
+    ], additional_targets={'image0':'image'})
 
 
-        iaa.SomeOf((0,6),[
-            iaa.ShearX(),
-            iaa.ShearY(),
-            iaa.ScaleX(),
-            iaa.ScaleY(),
-            iaa.Sometimes(0.5, iaa.Affine()),
-            iaa.Sometimes(0.5, iaa.PerspectiveTransform()),
-        ]),
-        iaa.Sometimes(0.9, iaa.Dropout()),
-        iaa.Sometimes(0.9, iaa.CoarseDropout()),
-        iaa.Sometimes(0.9, iaa.Cutout()),
-        iaa.SomeOf((0,1),[
-            iaa.Sometimes(0.9, iaa.Dropout()),
-            iaa.Sometimes(0.9, iaa.CoarseDropout()),
-            iaa.Sometimes(0.9, iaa.Cutout())
-        ])
-
-    ]
-
-    cg = Denoise_Generator(src_path, input_shape=input_shape, augs= [], batch_size=1)
+    cg = Denoise_Generator(src_path, input_shape=input_shape, augs= augs, batch_size=1)
     step_size = cg.__len__()
     for i in range(step_size):
         cg.__getitem__(i)
